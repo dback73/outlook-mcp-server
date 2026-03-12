@@ -39,6 +39,14 @@ from .email_operations import (
 
 from .batch_operations import batch_forward_email_tool
 
+from .rule_tools import (
+    list_rules_tool,
+    create_rule_tool,
+    update_rule_tool,
+    delete_rule_tool,
+    reorder_rule_tool,
+)
+
 __all__ = [
     # Folder tools
     'move_folder_tool',
@@ -67,4 +75,11 @@ __all__ = [
     
     # Batch operations
     'batch_forward_email_tool',
+
+    # Rule management tools
+    'list_rules_tool',
+    'create_rule_tool',
+    'update_rule_tool',
+    'delete_rule_tool',
+    'reorder_rule_tool',
 ]

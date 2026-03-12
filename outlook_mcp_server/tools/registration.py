@@ -32,6 +32,13 @@ from . import (
     
     # Batch operations
     batch_forward_email_tool,
+
+    # Rule management tools
+    list_rules_tool,
+    create_rule_tool,
+    update_rule_tool,
+    delete_rule_tool,
+    reorder_rule_tool,
 )
 
 
@@ -68,3 +75,10 @@ def register_all_tools(mcp_server: FastMCP) -> None:
     
     # Batch operations
     mcp_server.tool(batch_forward_email_tool)
+
+    # Rule management tools
+    mcp_server.tool(list_rules_tool)
+    mcp_server.tool(create_rule_tool)
+    mcp_server.tool(update_rule_tool)
+    mcp_server.tool(delete_rule_tool)
+    mcp_server.tool(reorder_rule_tool)

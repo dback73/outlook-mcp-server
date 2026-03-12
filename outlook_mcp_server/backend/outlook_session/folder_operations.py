@@ -99,6 +99,16 @@ class FolderOperations:
             folder = self._get_folder_by_name(folder_name)
             return folder
 
+    def _get_mailbox_root(self):
+        """Get the mailbox root reliably via GetDefaultFolder(INBOX).Parent.
+
+        Exchange accounts expose display names (e.g. 'David Back') in namespace.Folders,
+        not email addresses. Matching folder.Name to an email address always fails.
+        GetDefaultFolder(INBOX).Parent reliably returns the mailbox root in all configs.
+        """
+        inbox = self.session_manager.outlook_namespace.GetDefaultFolder(OutlookFolderType.INBOX)
+        return inbox.Parent
+
     def _get_folder_by_name(self, folder_name: str):
         """Find folder by name in folder hierarchy, supporting nested paths and mailbox-specific paths."""
         try:
@@ -110,31 +120,29 @@ class FolderOperations:
 
                 # Check if first part looks like an email address (mailbox-specific path)
                 if "@" in path_parts[0] and "." in path_parts[0]:
-                    # This is a mailbox-specific path like "user@company.com/Inbox/Folder"
-                    mailbox_name = path_parts[0]
-
-                    # Find the mailbox folder
-                    for folder in self.session_manager.outlook_namespace.Folders:
-                        if folder.Name == mailbox_name:
-                            current_folder = folder
-                            break
-
-                    if not current_folder:
-                        raise FolderNotFoundError(f"Mailbox '{mailbox_name}' not found")
-
-                    # Navigate through the remaining path parts
+                    # Resolve mailbox root via GetDefaultFolder — never match by display name.
+                    # Exchange accounts expose display names not email addresses in namespace.Folders.
+                    current_folder = self._get_mailbox_root()
                     remaining_parts = path_parts[1:]
                 else:
-                    # This is a regular path like "Inbox/Folder" or "Parent Folder/Child Folder"
-                    # Start with the top-level folders
-                    for folder in self.session_manager.outlook_namespace.Folders:
-                        if folder.Name == path_parts[0]:
-                            current_folder = folder
-                            break
-
+                    # Regular path like "Inbox/Folder" — resolve via mailbox root
+                    mailbox_root = self._get_mailbox_root()
+                    current_folder = None
+                    try:
+                        current_folder = mailbox_root.Folders[path_parts[0]]
+                    except Exception:
+                        for subfolder in mailbox_root.Folders:
+                            if subfolder.Name == path_parts[0]:
+                                current_folder = subfolder
+                                break
+                    # Fall back to namespace iteration for edge cases
+                    if not current_folder:
+                        for folder in self.session_manager.outlook_namespace.Folders:
+                            if folder.Name == path_parts[0]:
+                                current_folder = folder
+                                break
                     if not current_folder:
                         raise FolderNotFoundError(f"Top-level folder '{path_parts[0]}' not found")
-
                     remaining_parts = path_parts[1:]
 
                 # Navigate through the remaining path parts - optimized search
@@ -294,24 +302,29 @@ class FolderOperations:
             raise OperationFailedError(error_msg)
 
     def get_folder_list(self):
-        """Get list of all folders."""
+        """Get list of mail folders scoped to the Inbox subtree.
+
+        Scoped to mailbox root (not all namespace folders) to avoid enumerating
+        Calendar, Contacts, Groups, shared mailboxes, etc. This prevents COM timeout
+        on large Exchange mailboxes where full namespace enumeration hangs.
+        """
         try:
-            folders = []
-            for folder in self.session_manager.outlook_namespace.Folders:
-                folders.append(folder)
-                # Also add subfolders
-                self._add_subfolders(folder, folders)
+            mailbox_root = self._get_mailbox_root()
+            folders = [mailbox_root]
+            self._add_subfolders(mailbox_root, folders, max_depth=6)
             return folders
         except Exception as e:
             logger.error(f"Error getting folder list: {str(e)}")
             raise OperationFailedError(f"Error getting folder list: {str(e)}")
 
-    def _add_subfolders(self, folder, folders_list):
-        """Recursively add subfolders to the list."""
+    def _add_subfolders(self, folder, folders_list, depth=0, max_depth=6):
+        """Recursively add subfolders with depth limit to prevent COM timeout."""
+        if depth >= max_depth:
+            return
         try:
             for subfolder in folder.Folders:
                 folders_list.append(subfolder)
-                self._add_subfolders(subfolder, folders_list)
+                self._add_subfolders(subfolder, folders_list, depth + 1, max_depth)
         except Exception as e:
             logger.warning(f"Error accessing subfolders of {folder.Name}: {str(e)}")
 
