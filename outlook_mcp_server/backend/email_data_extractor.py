@@ -267,7 +267,8 @@ def get_email_by_number_unified(email_number: int, mode: str = "basic", include_
 
 def format_email_with_media(email_data: Dict[str, Any]) -> str:
     """Format email with media information for enhanced display."""
-    formatted_text = f"Subject: {email_data.get('subject', 'N/A')}\n"
+    formatted_text = f"EntryID: {email_data.get('entry_id', email_data.get('id', 'N/A'))}\n"
+    formatted_text += f"Subject: {email_data.get('subject', 'N/A')}\n"
     formatted_text += f"From: {email_data.get('from', 'N/A')}\n"
     formatted_text += f"To: {email_data.get('to', 'N/A')}\n"
     formatted_text += f"Date: {email_data.get('received', 'N/A')}\n"

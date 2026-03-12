@@ -35,6 +35,7 @@ def view_email_cache_tool(page: int = 1) -> Dict[str, Any]:
                 "emails": [
                     {
                         "number": 1,
+                        "entry_id": "00000000...",
                         "subject": "Email Subject",
                         "from": "Sender Name",
                         "to": "Recipient Name",
@@ -197,6 +198,7 @@ def view_email_cache_tool(page: int = 1) -> Dict[str, Any]:
                 # Store embedded images count directly
                 page_emails.append({
                     "number": i + 1,
+                    "entry_id": email_data.get("entry_id", email_data.get("id", "")),
                     "subject": email_data.get("subject", "No Subject"),
                     "from": sender_name,
                     "to": to_display,
