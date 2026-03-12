@@ -147,3 +147,28 @@ def delete_email_by_number_tool(email_number: int) -> Dict[str, Any]:
         return {"type": "text", "text": result}
     except Exception as e:
         return {"type": "text", "text": f"Error deleting email: {str(e)}"}
+
+
+def mark_email_read_tool(entry_id: str, read: bool = True) -> Dict[str, Any]:
+    """Mark an email as read or unread using its Outlook EntryID.
+
+    Args:
+        entry_id: The Outlook EntryID of the email item
+        read: True to mark as read (default), False to mark as unread
+
+    Returns:
+        dict: Response containing confirmation message
+        {
+            "type": "text",
+            "text": "Email marked as read/unread successfully"
+        }
+    """
+    if not entry_id or not isinstance(entry_id, str):
+        raise ValidationError("entry_id must be a non-empty string")
+
+    try:
+        from ..backend.outlook_session.email_operations import mark_email_read
+        result = mark_email_read(entry_id, read)
+        return {"type": "text", "text": result}
+    except Exception as e:
+        return {"type": "text", "text": f"Error marking email: {str(e)}"}

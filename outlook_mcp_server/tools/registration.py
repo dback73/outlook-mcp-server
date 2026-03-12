@@ -29,6 +29,7 @@ from . import (
     compose_email_tool,
     move_email_tool,
     delete_email_by_number_tool,
+    mark_email_read_tool,
     
     # Batch operations
     batch_forward_email_tool,
@@ -72,7 +73,8 @@ def register_all_tools(mcp_server: FastMCP) -> None:
     mcp_server.tool(compose_email_tool)
     mcp_server.tool(move_email_tool)
     mcp_server.tool(delete_email_by_number_tool)
-    
+    mcp_server.tool(mark_email_read_tool)
+
     # Batch operations
     mcp_server.tool(batch_forward_email_tool)
 

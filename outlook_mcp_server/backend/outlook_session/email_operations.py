@@ -168,4 +168,29 @@ def delete_email_by_number(email_number: int) -> str:
         return email_ops.delete_email_by_number(email_number)
 
 
+def mark_email_read(entry_id: str, read: bool = True) -> str:
+    """Mark an email as read or unread by entry ID.
 
+    Args:
+        entry_id: The Outlook EntryID of the email item.
+        read: True to mark as read, False to mark as unread.
+
+    Returns:
+        Success message or error message.
+    """
+    with OutlookSessionManager() as session_manager:
+        try:
+            item = session_manager.namespace.GetItemFromID(entry_id)
+            if not item:
+                return f"Error: Could not find email with entry ID {entry_id}"
+
+            item.UnRead = not read
+            item.Save()
+
+            status = "read" if read else "unread"
+            logger.info(f"Marked email as {status} (entry_id={entry_id[:16]}...)")
+            return f"Email marked as {status} successfully"
+        except Exception as e:
+            error_msg = f"Error marking email as {'read' if read else 'unread'}: {e}"
+            logger.error(error_msg)
+            return f"Error: {error_msg}"
