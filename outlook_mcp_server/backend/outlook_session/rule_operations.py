@@ -370,12 +370,16 @@ class RuleOperations:
             return "Error: Rule '[HEALTH]' is ETL infrastructure and cannot be deleted via MCP."
 
         rules = self._get_rules()
-        rule = self._find_rule(rules, rule_name)
-        if not rule:
+        rule_index = None
+        for i in range(1, rules.Count + 1):
+            if rules.Item(i).Name.lower() == rule_name.lower():
+                rule_index = i
+                break
+        if rule_index is None:
             return f"Error: Rule '{rule_name}' not found"
 
         try:
-            rules.Remove(rule.ExecutionOrder)
+            rules.Remove(rule_index)
             rules.Save(True)
             logger.info(f"Deleted rule '{rule_name}'")
             return f"Rule '{rule_name}' deleted successfully"
